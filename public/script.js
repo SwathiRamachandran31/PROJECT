@@ -1,10 +1,9 @@
-// Fetch and display all customers
 function fetchCustomers() {
   fetch("/api/customers")
     .then(res => res.json())
     .then(data => {
       const div = document.getElementById("customers");
-      div.innerHTML = ""; // Clear existing data
+      div.innerHTML = "";
       if (data.length === 0) {
         div.innerHTML = "<p>No customers found.</p>";
         return;
@@ -12,53 +11,48 @@ function fetchCustomers() {
 
       data.forEach(c => {
         div.innerHTML += `
-          <p>
+          <div data-id="${c.id}">
             <strong>${c.name}</strong><br>
             Points: ${c.points}<br>
-            Tier: ${c.tier}
-          </p>
+            Tier: ${c.tier}<br>
+            <button onclick="startEdit(${c.id}, '${c.name}', ${c.points}, '${c.tier}')">Edit</button>
+          </div>
         `;
       });
-    })
-    .catch(err => {
-      document.getElementById("customers").innerHTML = `<p>Error loading customers: ${err}</p>`;
     });
 }
 
-// Handle form submit
+function startEdit(id, name, points, tier) {
+  document.getElementById("name").value = name;
+  document.getElementById("points").value = points;
+  document.getElementById("tier").value = tier;
+  document.getElementById("customerForm").setAttribute("data-edit-id", id);
+  document.querySelector("#customerForm button").textContent = "Update Customer";
+}
+
 document.getElementById("customerForm").addEventListener("submit", function (e) {
   e.preventDefault();
-
   const name = document.getElementById("name").value.trim();
   const points = parseInt(document.getElementById("points").value.trim());
   const tier = document.getElementById("tier").value;
 
-  /*if (!name || isNaN(points) || !tier) {
-    alert("Please fill in all fields correctly.");
-    return;
-  }**/
+  const id = this.getAttribute("data-edit-id");
 
-  fetch("/api/customers", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
+  const method = id ? "PUT" : "POST";
+  const url = id ? `/api/customers/${id}` : "/api/customers";
+
+  fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, points, tier })
   })
-    .then(res => {
-      if (!res.ok) {
-        throw new Error("Failed to add customer");
-      }
-      return res.json();
-    })
-    .then(data => {
-      fetchCustomers(); // Refresh the customer list
-      document.getElementById("customerForm").reset();
-    })
-    .catch(err => {
-      alert("Error adding customer: " + err.message);
+    .then(res => res.json())
+    .then(() => {
+      fetchCustomers();
+      this.reset();
+      this.removeAttribute("data-edit-id");
+      document.querySelector("#customerForm button").textContent = "Add Customer";
     });
 });
 
-// Initial load
 fetchCustomers();

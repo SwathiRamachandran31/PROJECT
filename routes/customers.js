@@ -51,4 +51,25 @@ router.post("/", (req, res) => {
   }
 });
 
+// PUT update customer, UPDATE
+router.put("/:id", (req, res) => {
+  const { id } = req.params;
+  const { name, points, tier } = req.body;
+
+  try {
+    const customers = readCustomers();
+    const index = customers.findIndex(c => c.id === parseInt(id));
+
+    if (index === -1) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
+
+    customers[index] = { id: parseInt(id), name, points, tier };
+    writeCustomers(customers);
+    res.json(customers[index]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update customer." });
+  }
+});
+
 module.exports = router;
