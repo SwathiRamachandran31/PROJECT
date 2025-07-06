@@ -47,7 +47,14 @@ function removeCustomer(id) {
   if (!confirm("Are you sure to delete?")) return;
 
   fetch(`/api/customers/${id}`, { method: "DELETE" })
-    .then(() => loadCustomers())
+    .then(() => { loadCustomers();
+      if (currentEditId === id) {
+        document.getElementById("customerForm").reset();
+        currentEditId = null;
+        document.getElementById("submitBtn").textContent = "Add Customer";
+      }
+    })
+    
     .catch(() => alert("Something went wrong while deleting."));
 }
 
