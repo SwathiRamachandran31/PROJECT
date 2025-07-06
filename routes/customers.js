@@ -5,103 +5,111 @@ const router = express.Router();
 
 const DATA_FILE = path.join(__dirname, "../data/customers.json");
 
-// Helper function to read JSON data
-function readCustomers() {
-  const data = fs.readFileSync(DATA_FILE, "utf-8");
-  return JSON.parse(data);
+// simple helper to read the file
+function readData() {
+  const raw = fs.readFileSync(DATA_FILE, "utf-8");
+  return JSON.parse(raw);
 }
 
-// Helper function to write JSON data
-function writeCustomers(customers) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(customers, null, 2), "utf-8");
+// simple helper to write the file
+function writeData(list) {
+  fs.writeFileSync(DATA_FILE, JSON.stringify(list, null, 2), "utf-8");
 }
 
-// GET all customers, READ
+// get all customers
 router.get("/", (req, res) => {
   try {
-    const customers = readCustomers();
-    res.json(customers);
+    const all = readData();
+    res.json(all);
   } catch (err) {
-    res.status(500).json({ error: "Failed to read customers." });
+    res.status(500).json({ error: "Error reading customers." });
   }
 });
 
-// POST a new customer, CREATE
+// add a customer
 router.post("/", (req, res) => {
   const { name, points, tier } = req.body;
 
+  // basic check
   if (!name || points === undefined || !tier) {
-    return res.status(400).json({ error: "Name, points, and tier are required." });
+    return res.status(400).json({ error: "Missing fields." });
+  }
+
+  if (typeof points !== "number" || points < 0 || points % 10 !== 0) {
+    return res.status(400).json({ error: "Points must be positive and in 10s." });
   }
 
   try {
-    const customers = readCustomers();
-    const newCustomer = {
-      id: customers.length > 0 ? customers[customers.length - 1].id + 1 : 1,
+    const list = readData();
+    const newCust = {
+      id: list.length > 0 ? list[list.length - 1].id + 1 : 1,
       name,
       points,
       tier
     };
 
-    customers.push(newCustomer);
-    writeCustomers(customers);
-    res.status(201).json(newCustomer);
+    list.push(newCust);
+    writeData(list);
+    res.status(201).json(newCust);
   } catch (err) {
-    res.status(500).json({ error: "Failed to add customer." });
+    res.status(500).json({ error: "Error adding customer." });
   }
 });
 
-// PUT update customer, UPDATE
+// update a customer
 router.put("/:id", (req, res) => {
   const { id } = req.params;
   const { name, points, tier } = req.body;
 
   if (!name || points === undefined || !tier) {
-    return res.status(400).json({ error: "Name, points, and tier are required." });
+    return res.status(400).json({ error: "Missing fields." });
+  }
+
+  if (typeof points !== "number" || points < 0 || points % 10 !== 0) {
+    return res.status(400).json({ error: "Points must be positive and divisible by 10." });
   }
 
   try {
-    let customers = readCustomers();
-    const customerIndex = customers.findIndex(c => c.id === parseInt(id));
+    const list = readData();
+    const index = list.findIndex(c => c.id === parseInt(id));
 
-    if (customerIndex === -1) {
-      return res.status(404).json({ error: "Customer not found" });
+    if (index === -1) {
+      return res.status(404).json({ error: "Customer not found." });
     }
 
-    customers[customerIndex] = {
-      ...customers[customerIndex],
+    // update the fields
+    list[index] = {
+      ...list[index],
       name,
       points,
       tier
     };
 
-    writeCustomers(customers);
-    res.json(customers[customerIndex]);
+    writeData(list);
+    res.json(list[index]);
   } catch (err) {
     res.status(500).json({ error: "Failed to update customer." });
   }
 });
 
-
-// DELETE a customer, DELETE
+// delete a customer
 router.delete("/:id", (req, res) => {
   const { id } = req.params;
 
   try {
-    let customers = readCustomers();
-    const index = customers.findIndex(c => c.id === parseInt(id));
+    const list = readData();
+    const index = list.findIndex(c => c.id === parseInt(id));
 
     if (index === -1) {
-      return res.status(404).json({ error: "Customer not found" });
+      return res.status(404).json({ error: "Customer not found." });
     }
 
-    customers.splice(index, 1); // Remove the customer
-    writeCustomers(customers);
-    res.json({ message: "Customer deleted successfully" });
+    list.splice(index, 1); // remove one element
+    writeData(list);
+    res.json({ message: "Deleted successfully." });
   } catch (err) {
-    res.status(500).json({ error: "Failed to delete customer." });
+    res.status(500).json({ error: "Delete failed." });
   }
 });
-
 
 module.exports = router;

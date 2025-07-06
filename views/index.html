@@ -16,6 +16,10 @@
       border-bottom: 1px solid #ccc;
       padding: 5px 0;
     }
+    .error {
+      color: red;
+      font-size: 0.9em;
+    }
   </style>
 </head>
 <body>
@@ -23,8 +27,8 @@
 
   <h2>Add New Customer</h2>
   <form id="customerForm">
-    <input type="string" id="name" placeholder="Name" pattern="^[A-Za-z\s]+$" required />
-    <input type="number" id="points" placeholder="Loyalty Points" required />
+    <input type="text" id="name" placeholder="Name" pattern="^[A-Za-z\s]+$" required />
+    <input type="number" id="points" placeholder="Loyalty Points" min="0" step="10" required />
     <select id="tier" required>
       <option value="">Select Tier</option>
       <option value="Silver">Silver</option>
@@ -32,6 +36,7 @@
       <option value="Platinum">Platinum</option>
     </select>
     <button type="submit" id="submitBtn">Add Customer</button>
+    <div class="error" id="formError"></div>
   </form>
 
   <h2>Customer List</h2>

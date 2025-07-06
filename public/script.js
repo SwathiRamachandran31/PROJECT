@@ -1,102 +1,124 @@
-let editingCustomerId = null; // Track if editing
+let currentEditId = null; // used to track if editing mode is on
 
-function fetchCustomers() {
+// load customer list when page loads
+function loadCustomers() {
   fetch("/api/customers")
     .then(res => res.json())
-    .then(data => {
-      const div = document.getElementById("customers");
-      div.innerHTML = "";
+    .then(customers => {
+      const display = document.getElementById("customers");
+      display.innerHTML = "";
 
-      if (data.length === 0) {
-        div.innerHTML = "<p>No customers found.</p>";
+      if (customers.length === 0) {
+        display.innerHTML = "<p>No customers found yet.</p>";
         return;
       }
 
-      data.forEach(c => {
-        const customerDiv = document.createElement("div");
-        customerDiv.innerHTML = `
+      customers.forEach(c => {
+        const p = document.createElement("div");
+        p.innerHTML = `
           <p>
             <strong>${c.name}</strong><br>
             Points: ${c.points}<br>
             Tier: ${c.tier}<br>
-            <button onclick="editCustomer(${c.id}, '${c.name}', ${c.points}, '${c.tier}')">Edit</button>
-            <button onclick="deleteCustomer(${c.id})">Delete</button>
+            <button onclick="startEdit(${c.id}, '${c.name}', ${c.points}, '${c.tier}')">Edit</button>
+            <button onclick="removeCustomer(${c.id})">Delete</button>
           </p>
         `;
-        div.appendChild(customerDiv);
+        display.appendChild(p);
       });
     })
-    .catch(err => {
-      document.getElementById("customers").innerHTML = `<p>Error loading customers: ${err}</p>`;
+    .catch(() => {
+      document.getElementById("customers").innerHTML = "<p>Error fetching data.</p>";
     });
 }
 
-// Edit button logic: populate form with existing data
-function editCustomer(id, name, points, tier) {
+// called when Edit is clicked
+function startEdit(id, name, pts, level) {
   document.getElementById("name").value = name;
-  document.getElementById("points").value = points;
-  document.getElementById("tier").value = tier;
-  editingCustomerId = id;
-
+  document.getElementById("points").value = pts;
+  document.getElementById("tier").value = level;
+  currentEditId = id;
   document.getElementById("submitBtn").textContent = "Update Customer";
+  document.getElementById("formError").textContent = "";
 }
 
-// Delete customer
-function deleteCustomer(id) {
-  if (!confirm("Are you sure you want to delete this customer?")) return;
+// delete customer
+function removeCustomer(id) {
+  if (!confirm("Are you sure to delete?")) return;
 
-  fetch(`/api/customers/${id}`, {
-    method: "DELETE"
-  })
-    .then(res => res.json())
-    .then(() => fetchCustomers())
-    .catch(err => alert("Error deleting customer: " + err.message));
+  fetch(`/api/customers/${id}`, { method: "DELETE" })
+    .then(() => loadCustomers())
+    .catch(() => alert("Something went wrong while deleting."));
 }
 
-// Handle form submit for add or update
+// when form is submitted
 document.getElementById("customerForm").addEventListener("submit", function (e) {
   e.preventDefault();
 
   const name = document.getElementById("name").value.trim();
-  const points = parseInt(document.getElementById("points").value.trim());
+  const pts = parseInt(document.getElementById("points").value.trim());
   const tier = document.getElementById("tier").value;
+  const err = document.getElementById("formError");
+  err.textContent = "";
 
-  if (!name || isNaN(points) || !tier) {
-    alert("Please fill in all fields.");
+  // validations
+  if (!name || isNaN(pts) || !tier) {
+    err.textContent = "Please fill out everything!";
     return;
   }
 
-  const customer = { name, points, tier };
+  if (!/^[A-Za-z\s]+$/.test(name)) {
+    err.textContent = "Name should only have letters.";
+    return;
+  }
 
-  if (editingCustomerId !== null) {
-    // Update
-    fetch(`/api/customers/${editingCustomerId}`, {
+  if (pts < 0 || pts % 10 !== 0) {
+    err.textContent = "Points must be positive and divisible by 10.";
+    return;
+  }
+
+  const data = { name, points: pts, tier };
+
+  if (currentEditId !== null) {
+    // Update mode
+    fetch(`/api/customers/${currentEditId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(customer)
+      body: JSON.stringify(data)
     })
-      .then(res => res.json())
-      .then(() => {
-        fetchCustomers();
-        document.getElementById("customerForm").reset();
-        editingCustomerId = null;
-        document.getElementById("submitBtn").textContent = "Add Customer";
+      .then(resp => {
+        if (!resp.ok) throw new Error();
+        return resp.json();
       })
-      .catch(err => alert("Error updating customer: " + err.message));
+      .then(() => {
+        loadCustomers();
+        document.getElementById("customerForm").reset();
+        document.getElementById("submitBtn").textContent = "Add Customer";
+        currentEditId = null;
+      })
+      .catch(() => {
+        err.textContent = "Could not update. Try again.";
+      });
   } else {
-    // Add new
+    // Adding new
     fetch("/api/customers", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(customer)
+      body: JSON.stringify(data)
     })
-      .then(res => res.json())
+      .then(resp => {
+        if (!resp.ok) throw new Error();
+        return resp.json();
+      })
       .then(() => {
-        fetchCustomers();
+        loadCustomers();
         document.getElementById("customerForm").reset();
       })
-      .catch(err => alert("Error adding customer: " + err.message));
+      .catch(() => {
+        err.textContent = "Failed to add customer.";
+      });
   }
 });
 
-fetchCustomers();
+// on page load
+loadCustomers();
