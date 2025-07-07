@@ -20,7 +20,7 @@ function loadCustomers() {
             <strong>${c.name}</strong><br>
             Points: ${c.points}<br>
             Tier: ${c.tier}<br>
-            <button onclick="startEdit(${c.id}, '${c.name}', ${c.points}, '${c.tier}')">Edit</button>
+            <button onclick="startEdit(${c.id}, '${c.name}', ${c.points})">Edit</button>
             <button onclick="removeCustomer(${c.id})">Delete</button>
           </p>
         `;
@@ -36,7 +36,6 @@ function loadCustomers() {
 function startEdit(id, name, pts, level) {
   document.getElementById("name").value = name;
   document.getElementById("points").value = pts;
-  document.getElementById("tier").value = level;
   currentEditId = id;
   document.getElementById("submitBtn").textContent = "Update Customer";
   document.getElementById("formError").textContent = "";
@@ -64,12 +63,11 @@ document.getElementById("customerForm").addEventListener("submit", function (e) 
 
   const name = document.getElementById("name").value.trim();
   const pts = parseInt(document.getElementById("points").value.trim());
-  const tier = document.getElementById("tier").value;
   const err = document.getElementById("formError");
   err.textContent = "";
 
   // validations
-  if (!name || isNaN(pts) || !tier) {
+  if (!name || isNaN(pts)) {
     err.textContent = "Please fill out everything!";
     return;
   }
@@ -84,7 +82,7 @@ document.getElementById("customerForm").addEventListener("submit", function (e) 
     return;
   }
 
-  const data = { name, points: pts, tier };
+  const data = { name, points: pts };
 
   if (currentEditId !== null) {
     // Update mode

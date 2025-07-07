@@ -16,6 +16,14 @@ function writeData(list) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(list, null, 2), "utf-8");
 }
 
+// validate the Tier
+function calculateTier(points) {
+  if (points >= 500) return "Platinum";
+  if (points >= 300) return "Gold";
+  if (points >= 100) return "Silver";
+  return "None";
+}
+
 // get all customers
 router.get("/", (req, res) => {
   try {
@@ -28,10 +36,10 @@ router.get("/", (req, res) => {
 
 // add a customer
 router.post("/", (req, res) => {
-  const { name, points, tier } = req.body;
+  const { name, points } = req.body;
 
   // basic check
-  if (!name || points === undefined || !tier) {
+  if (!name || points === undefined ) {
     return res.status(400).json({ error: "Missing fields." });
   }
 
@@ -45,7 +53,7 @@ router.post("/", (req, res) => {
       id: list.length > 0 ? list[list.length - 1].id + 1 : 1,
       name,
       points,
-      tier
+      tier: calculateTier(points)
     };
 
     list.push(newCust);
@@ -59,9 +67,9 @@ router.post("/", (req, res) => {
 // update a customer
 router.put("/:id", (req, res) => {
   const { id } = req.params;
-  const { name, points, tier } = req.body;
+  const { name, points } = req.body;
 
-  if (!name || points === undefined || !tier) {
+  if (!name || points === undefined) {
     return res.status(400).json({ error: "Missing fields." });
   }
 
@@ -82,7 +90,7 @@ router.put("/:id", (req, res) => {
       ...list[index],
       name,
       points,
-      tier
+      tier: calculateTier(points)
     };
 
     writeData(list);
