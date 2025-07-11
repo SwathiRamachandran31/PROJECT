@@ -18,9 +18,10 @@ function loadCustomers() {
         p.innerHTML = `
           <p>
             <strong>${c.name}</strong><br>
+            Email: ${c.email}<br>
             Points: ${c.points}<br>
             Tier: ${c.tier}<br>
-            <button onclick="startEdit(${c.id}, '${c.name}', ${c.points})">Edit</button>
+            <button onclick="startEdit(${c.id}, '${c.name}', ${c.points}, '${c.email}')">Edit</button>
             <button onclick="removeCustomer(${c.id})">Delete</button>
           </p>
         `;
@@ -33,9 +34,10 @@ function loadCustomers() {
 }
 
 // called when Edit is clicked
-function startEdit(id, name, pts, level) {
+function startEdit(id, name, pts, email) {
   document.getElementById("name").value = name;
   document.getElementById("points").value = pts;
+  document.getElementById("email").value = email;
   currentEditId = id;
   document.getElementById("submitBtn").textContent = "Update Customer";
   document.getElementById("formError").textContent = "";
@@ -63,6 +65,7 @@ document.getElementById("customerForm").addEventListener("submit", function (e) 
 
   const name = document.getElementById("name").value.trim();
   const pts = parseInt(document.getElementById("points").value.trim());
+  const email = document.getElementById("email").value.trim();
   const err = document.getElementById("formError");
   err.textContent = "";
 
@@ -82,7 +85,12 @@ document.getElementById("customerForm").addEventListener("submit", function (e) 
     return;
   }
 
-  const data = { name, points: pts };
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    err.textContent = "Enter a valid email.";
+    return;
+  }
+
+  const data = { name, points: pts, email };
 
   if (currentEditId !== null) {
     // Update mode

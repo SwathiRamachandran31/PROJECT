@@ -36,11 +36,15 @@ router.get("/", (req, res) => {
 
 // add a customer
 router.post("/", (req, res) => {
-  const { name, points } = req.body;
+  const { name, points, email } = req.body;
 
   // basic check
-  if (!name || points === undefined ) {
+  if (!name || points === undefined || !email) {
     return res.status(400).json({ error: "Missing fields." });
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: "Invalid email." });
   }
 
   if (typeof points !== "number" || points < 0 || points % 10 !== 0) {
@@ -49,11 +53,15 @@ router.post("/", (req, res) => {
 
   try {
     const list = readData();
+
+    //TODO: Each Customer has an Unique Email-id, check for duplicate 
+
     const newCust = {
       id: list.length > 0 ? list[list.length - 1].id + 1 : 1,
       name,
       points,
-      tier: calculateTier(points)
+      tier: calculateTier(points),
+      email
     };
 
     list.push(newCust);
@@ -67,10 +75,14 @@ router.post("/", (req, res) => {
 // update a customer
 router.put("/:id", (req, res) => {
   const { id } = req.params;
-  const { name, points } = req.body;
+  const { name, points, email } = req.body;
 
-  if (!name || points === undefined) {
+  if (!name || points === undefined || !email) {
     return res.status(400).json({ error: "Missing fields." });
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: "Invalid email." });
   }
 
   if (typeof points !== "number" || points < 0 || points % 10 !== 0) {
@@ -85,12 +97,15 @@ router.put("/:id", (req, res) => {
       return res.status(404).json({ error: "Customer not found." });
     }
 
+    //TODO: Check duplicate Email-id, while editing existing Customers
+
     // update the fields
     list[index] = {
       ...list[index],
       name,
       points,
-      tier: calculateTier(points)
+      tier: calculateTier(points),
+      email
     };
 
     writeData(list);
