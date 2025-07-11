@@ -54,7 +54,10 @@ router.post("/", (req, res) => {
   try {
     const list = readData();
 
-    //TODO: Each Customer has an Unique Email-id, check for duplicate 
+    const emailExists = list.some(c => c.email.toLowerCase() === email.toLowerCase());
+    if (emailExists) {
+        return res.status(409).json({ error: "Email already exists." });
+    }
 
     const newCust = {
       id: list.length > 0 ? list[list.length - 1].id + 1 : 1,
@@ -96,8 +99,13 @@ router.put("/:id", (req, res) => {
     if (index === -1) {
       return res.status(404).json({ error: "Customer not found." });
     }
-
-    //TODO: Check duplicate Email-id, while editing existing Customers
+    
+    const emailExists = list.some(
+      c => c.email.toLowerCase() === email.toLowerCase() && c.id !== parseInt(id)
+    );
+    if (emailExists) {
+      return res.status(409).json({ error: "Email already in use by another customer." });
+    }
 
     // update the fields
     list[index] = {
